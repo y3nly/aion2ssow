@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "python build.py",
-    "test": "node --test test/models.test.cjs",
+    "test": "node --test test/models.test.cjs && python test/build_test.py",
     "test:browser": "node test/browser.cjs"
   },
   "devDependencies": { "playwright": "1.64.0" }

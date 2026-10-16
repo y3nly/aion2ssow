@@ -2,6 +2,7 @@
 from pathlib import Path
 from html.parser import HTMLParser
 import hashlib
+import ast
 import json
 import re
 import shutil
@@ -50,6 +51,16 @@ def build(root=ROOT):
     translations = catalog(root)
     parser = DisplayText()
     parser.feed(source)
+    script = source.split('<script>', 1)[1].split('</script>', 1)[0]
+    for literal in re.findall(r'''"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*' ''', script, re.X):
+        try:
+            value = ast.literal_eval(literal)
+        except (ValueError, SyntaxError):
+            continue
+        if isinstance(value, str) and re.search('[가-힣]', value):
+            dynamic = DisplayText()
+            dynamic.feed(value)
+            parser.text.extend(dynamic.text)
     # Exact strings or fully covered fragments are acceptable. Never guess new translations.
     missing = []
     for value in dict.fromkeys(parser.text):

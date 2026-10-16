@@ -336,3 +336,12 @@ AION2 damage calculator · 문의하기 마르쿠탄 쑈|AION2 damage calculator
 신속의 계약 20레벨(4특화 포함)|Swift Contract (신속의 계약; name unconfirmed), Lv.20 fourth trait
 광풍|Gale (광풍; name unconfirmed)
 질풍의 권능|Chanter speed buff (질풍의 권능; name unconfirmed)
++ 주문서|+ Scroll
++ 직업버프|+ Class buff
++ 질풍|+ Chanter speed
++ 기타|+ Other
+다음:|Next:
+현재|Current
+· 풀버프 후|· Buffed
+이 브라우저에서는 저장 기능을 사용할 수 없습니다.|Storage is unavailable in this browser.
+저장된 값 없음|No saved values
