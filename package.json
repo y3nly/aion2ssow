@@ -1,0 +1,10 @@
+{
+  "name": "aion2-stat-calculators",
+  "private": true,
+  "scripts": {
+    "build": "python build.py",
+    "test": "node --test test/models.test.cjs",
+    "test:browser": "node test/browser.cjs"
+  },
+  "devDependencies": { "playwright": "1.64.0" }
+}
