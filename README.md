@@ -8,7 +8,7 @@ For browser checks, run `npm ci`, `npx playwright install chromium`, then `npm r
 
 ## Localization
 
-`extension/translations.txt` maps Korean display text to English. The runtime translates text nodes and messages, preserving original select values and calculation identifiers. Switching language preserves inputs. Confirmed terminology comes from NotMeter's paired Korean/English catalogs, including [client terms](https://notmeter.com/assets/client-terms.js?v=20261009-orbit) and [stat page labels](https://notmeter.com/assets/stat-efficiency.js?v=20261013-hard-hit). Provisional skill/dungeon names are labeled. Combat Speed is a threshold reference and does not estimate DPS.
+`extension/translations.txt` maps Korean display text to English. The runtime translates text nodes and messages, preserving original select values and calculation identifiers. Switching language preserves inputs. Confirmed terminology comes from NotMeter's paired Korean/English catalogs, including [client terms](https://notmeter.com/assets/client-terms.js?v=20261009-orbit) and [stat page labels](https://notmeter.com/assets/stat-efficiency.js?v=20261013-hard-hit). Compact field/chart labels use DPH, Crit, Front/Back Boost, and Multi-hit Chance to preserve the original row geometry. Speed research notes identify provisional skill translations; verbose translation qualifications are kept out of controls. Combat Speed is a threshold reference and does not estimate DPS.
 
 The build checks required integration anchors and reports missing static translations. Browser checks exercise dynamic labels across classes and comparison/save actions. The generated page disables the author's live Apps Script comment endpoint; attribution, donation details, and research links remain.
 

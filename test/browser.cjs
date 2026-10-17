@@ -90,7 +90,15 @@ const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('ba
     await page.locator('#speedClass').selectOption('검성');
     await page.screenshot({path:path.join(root,'dist/review-desktop.png'),fullPage:true});
     for(const mode of ['bongbong','notmeter']){
-      await page.locator('#mode-'+mode).click();await page.setViewportSize({width:360,height:800});
+      await page.locator('#mode-'+mode).click();
+      for(const width of [1440,800,360]){
+        await page.setViewportSize({width,height:800});
+        const wrapped=await page.evaluate(()=>[...document.querySelectorAll('.f label,.m-lbl,.bar-row .name,.import-origin')]
+          .filter(el=>el.getClientRects().length)
+          .filter(el=>el.scrollWidth>el.clientWidth+1||el.getBoundingClientRect().height>parseFloat(getComputedStyle(el).lineHeight)*1.3)
+          .map(el=>el.textContent));
+        assert.deepEqual(wrapped,[],mode+' labels must fit one row at '+width+'px');
+      }
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,mode+' mobile overflow');
       await page.screenshot({path:path.join(root,'dist/review-'+mode+'-mobile.png'),fullPage:true});
     }

@@ -14,9 +14,9 @@
     importDetails:['Imported values and remaining inputs','가져온 값과 남은 입력 항목'],
     bongDesc:['Original formulas · normal and guaranteed critical skills','원본 공식 · 일반/확정 치명 스킬'],
     nmDesc:['NotMeter formulas · detailed attack components','NotMeter 공식 · 세부 공격 수치'],
-    imported:['Imported','가져옴'],derived:['Derived from attack components','공격 수치로 환산'],
-    retained:['Not provided · existing value retained','미제공 · 기존 값 유지'],manual:['Manually edited','직접 수정'],
-    empty:['Not provided · enter this stat','미제공 · 직접 입력하세요'],
+    imported:['Imported','가져옴'],derived:['Derived','환산값'],
+    retained:['Kept value','기존 값'],manual:['Edited','직접 수정'],
+    empty:['Enter stat','직접 입력'],
     valid:['Imported into both modes. Review the remaining fields below.','두 모드에 적용했습니다. 아래 미제공 항목을 확인하세요.'],
     invalid:['Import failed. Paste a valid NotMeter V4 stat export. Existing inputs were preserved.','가져오기 실패. 유효한 NotMeter V4 스탯을 붙여넣으세요. 기존 입력은 유지됩니다.'],
     nothing:['Paste your stats or enter them below to begin.','스탯을 붙여넣거나 아래에 직접 입력하세요.'],
@@ -26,7 +26,7 @@
     speedNote:['Bongbong Combat Speed reference · thresholds only; no DPS gain is calculated. Scroll and buff settings are independent of either damage model.','Bongbong 전투속도 참고 · 구간만 표시하며 DPS 증가율은 계산하지 않습니다. 주문서와 버프는 피해 계산과 별개입니다.'],
     baseline:['Current stats','현재 스탯'],scenario:['Combat assumptions','전투 조건'],
     delta:['Option changes to compare','비교할 옵션 증가량'],deltaHelp:['Enter the gains or losses from an equipment change. These affect the comparison only.','장비 변경으로 증가/감소하는 값을 입력하세요. 비교 결과에만 적용됩니다.'],
-    ranking:['Stat efficiency ranking','스탯 투자 효율'],expected:['Expected damage','기대 피해'],after:['After option changes','옵션 변경 후'],gain:['Damage gain','피해 증가율'],
+    ranking:['Stat efficiency ranking','스탯 투자 효율'],expected:['DPH','기대 피해'],after:['New DPH','옵션 변경 후'],gain:['Damage gain','피해 증가율'],
     attack:['Reconstructed character-window Attack','환산 캐릭터 창 공격력'],
     method:['Detailed attack components, Perfect Chance, and Weapon Damage Boost follow NotMeter’s public stat calculator (20261013-hard-hit). Skill mix, cooldowns, and rotations are not modeled. Enemy Defense, Penetration, Multi-hit, and Bongbong resistances do not participate in this mode.','세부 공격 수치, 완벽, 무기 피해 증폭은 NotMeter 공개 계산기(20261013-hard-hit)를 따릅니다. 스킬 비중/재사용 시간/사이클은 제외합니다. 이 모드는 방어력, 관통, 다단 히트 및 Bongbong 내성을 사용하지 않습니다.'],
     critHelp:['Critical chance is a manual combat assumption; the current documented paste fields do not supply it. Imported divine stats are already reflected in the copied percentages; changing divine points applies only the difference from that imported baseline.','치명타 발동률은 직접 설정하는 전투 조건입니다. 현재 확인된 내보내기 필드에는 포함되지 않습니다. 주신 스탯은 복사된 비율에 이미 반영되어 있으므로 변경 시 가져온 기준 대비 차이만 적용됩니다.'],
@@ -40,6 +40,8 @@
   };
   const c=k=>copy[k]?.[locale==='ko'?1:0]??k;
   const name=k=>model.fields[k]?.[locale==='ko'?1:0]??k;
+  const shortNames={power:'Might',destruction:'Destruction',justice:'Justice',wisdom:'Wisdom',attack:'Attack',additionalAttack:'Attack Bonus',minimumAttack:'Min Attack',maximumAttack:'Max Attack',pveAttack:'PvE Attack',bossAttack:'Boss Attack',attackIncreasePercent:'Attack Increase',damageAmplificationPercent:'Damage Boost',weaponDamageAmplificationPercent:'Weapon Boost',pveDamageAmplificationPercent:'PvE Boost',bossDamageAmplificationPercent:'Boss Boost',criticalDamageAmplificationPercent:'Crit Boost',perfectPercent:'Perfect Chance',hardHitPercent:'Double Chance',frontDamageAmplificationPercent:'Front Boost',backDamageAmplificationPercent:'Back Boost'};
+  const chartName=k=>locale==='en'?(shortNames[k]??name(k)):name(k).replace(/ %$/,'');
   const esc=s=>String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const normalize=s=>s.replace(/\s+/g,' ').trim();
   const catalog=globalThis.StatsTranslations;
@@ -109,7 +111,7 @@
     if(!result){out.innerHTML='<p class="nm-status">'+c(model.baseline.some(k=>nm[k]===null)?'needStats':'invalidCalc')+'</p>';return;}
     const cards=[['expected',fmt(result.base.damage)],['after',fmt(result.after.damage)],['gain',gain(result.gain)]];
     const max=Math.max(...result.effects.map(r=>r.gain),.001);
-    out.innerHTML='<div class="nm-cards">'+cards.map(([k,v])=>'<div class="card"><div class="lbl">'+c(k)+'</div><div class="val">'+v+'</div></div>').join('')+'</div><p class="nm-note">'+c('attack')+': '+fmt(result.base.attack)+'</p><section class="panel eff"><h2>'+c('ranking')+'</h2>'+result.effects.map((r,i)=>'<div class="bar-row'+(i===0?' top':'')+'"><span class="name">'+esc(name(r.key))+' +'+r.amount+(!['power','destruction','justice','wisdom',...['attack','additionalAttack','minimumAttack','maximumAttack','pveAttack','bossAttack']].includes(r.key)?'pp':'')+'</span><div class="track"><div class="fill" style="width:'+Math.max(0,r.gain/max*100)+'%;background:var(--'+(i===0?'green':'purple')+')"></div></div><span class="num">'+gain(r.gain)+'</span></div>').join('')+'</section>';
+    out.innerHTML='<div class="nm-cards">'+cards.map(([k,v])=>'<div class="card"><div class="lbl">'+c(k)+'</div><div class="val">'+v+'</div></div>').join('')+'</div><p class="nm-note">'+c('attack')+': '+fmt(result.base.attack)+'</p><section class="panel eff"><h2>'+c('ranking')+'</h2>'+result.effects.map((r,i)=>'<div class="bar-row'+(i===0?' top':'')+'"><span class="name">'+esc(chartName(r.key))+' +'+r.amount+(!['power','destruction','justice','wisdom',...['attack','additionalAttack','minimumAttack','maximumAttack','pveAttack','bossAttack']].includes(r.key)?'pp':'')+'</span><div class="track"><div class="fill" style="width:'+Math.max(0,r.gain/max*100)+'%;background:var(--'+(i===0?'green':'purple')+')"></div></div><span class="num">'+gain(r.gain)+'</span></div>').join('')+'</section>';
   }
   function persistNm(){store.set('nm',nm);store.set('divine',divine);store.set('deltas',deltas);}
   nmHost.addEventListener('input',e=>{
