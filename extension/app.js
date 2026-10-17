@@ -76,6 +76,8 @@
   let divine=store.get('divine',Object.fromEntries(['power','destruction','justice','wisdom'].map(k=>[k,nm[k]])));
   let deltas=store.get('deltas',{}), origins=store.get('origins',{bong:{},notmeter:{}}), imported=store.get('profile',null);
   let report=imported?model.adapt(imported):null, importState=imported?'valid':'nothing';
+  // Replace the old inherited resistance assumption; keep explicit scenario edits.
+  if(!origins.notmeter.bossHardHitResistancePercent && nm.bossHardHitResistancePercent===30)nm.bossHardHitResistancePercent=0;
   // Older visits may have persisted examples alongside a single edited field.
   // Preserve imports and actual edits; empty the inherited examples, including crit chance.
   for(const key of [...model.baseline,'criticalChancePercent']){

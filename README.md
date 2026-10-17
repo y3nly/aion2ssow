@@ -28,6 +28,8 @@ Bongbong Attack is reconstructed as `(attack + additionalAttack + (minimumAttack
 
 Divine stats are already reflected in imported percentages. Only changes from the imported divine baseline become option changes. Critical chance and other combat assumptions remain manual. Damage is a relative comparison, without skill rotation or cooldown modeling. A real desktop export is still needed to confirm producer compatibility.
 
+Boss Double Resist defaults to 0% at the site owner's request. Earlier inherited 30% values are migrated to zero; explicitly edited scenario values are retained. This is a configurable assumption, not a measured boss value.
+
 ## Pulling upstream updates
 
 1. `git fetch upstream` then `git merge upstream/main` on a feature branch.

@@ -37,7 +37,7 @@
   const finite = v => typeof v === 'number' && Number.isFinite(v);
   const defaults = () => Object.assign(Object.fromEntries(Object.keys(fields).map(k => [k,0])), {
     attack: 10000, minimumAttack: 1000, maximumAttack: 2000,
-    criticalChancePercent: 80, bossHardHitResistancePercent: 30,
+    criticalChancePercent: 80, bossHardHitResistancePercent: 0,
     frontAttackRatePercent: 100, backAttackRatePercent: 100, attackType:'none',
   });
   function reconstructAttack(p) {

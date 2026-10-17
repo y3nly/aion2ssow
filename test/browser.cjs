@@ -29,6 +29,7 @@ const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('ba
     await page.locator('#mode-notmeter').click();
     assert.equal(await page.locator('#nm-attack').inputValue(),'');
     assert.equal(await page.locator('#nm-criticalChancePercent').inputValue(),'');
+    assert.equal(await page.locator('#nm-bossHardHitResistancePercent').inputValue(),'0');
     assert.equal(await page.locator('#nm-output .nm-cards').count(),0);
     await page.locator('#mode-bongbong').click();
     const original=await context.newPage();await original.goto(base+'/original');
@@ -111,7 +112,7 @@ const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('ba
     const migration=await browser.newContext();
     await migration.addInitScript(()=>{
       localStorage.setItem('aion_stats_bong',JSON.stringify({atk:'13538',pen:'2560',amp:'77'}));
-      localStorage.setItem('aion_stats_nm',JSON.stringify({attack:10000,damageAmplificationPercent:77}));
+      localStorage.setItem('aion_stats_nm',JSON.stringify({attack:10000,damageAmplificationPercent:77,bossHardHitResistancePercent:30}));
       localStorage.setItem('aion_stats_origins',JSON.stringify({bong:{amp:'manual'},notmeter:{damageAmplificationPercent:'manual'}}));
     });
     const migrated=await migration.newPage();await migrated.goto(base);await migrated.waitForFunction(()=>globalThis.StatsExtension);
@@ -119,6 +120,7 @@ const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('ba
     assert.equal(await migrated.locator('#amp').inputValue(),'77');
     await migrated.locator('#mode-notmeter').click();
     assert.equal(await migrated.locator('#nm-attack').inputValue(),'');
+    assert.equal(await migrated.locator('#nm-bossHardHitResistancePercent').inputValue(),'0');
     assert.equal(await migrated.locator('#nm-damageAmplificationPercent').inputValue(),'77');
     await migration.close();
     console.log('Browser checks passed: upstream parity, shared import, language, modes, saves, all classes, mobile.');
