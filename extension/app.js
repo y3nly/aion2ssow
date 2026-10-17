@@ -16,10 +16,12 @@
     nmDesc:['NotMeter formulas · detailed attack components','NotMeter 공식 · 세부 공격 수치'],
     imported:['Imported','가져옴'],derived:['Derived from attack components','공격 수치로 환산'],
     retained:['Not provided · existing value retained','미제공 · 기존 값 유지'],manual:['Manually edited','직접 수정'],
-    retainedDefault:['Not provided · example default retained','미제공 · 예시 기본값 유지'],
+    empty:['Not provided · enter this stat','미제공 · 직접 입력하세요'],
     valid:['Imported into both modes. Review the remaining fields below.','두 모드에 적용했습니다. 아래 미제공 항목을 확인하세요.'],
     invalid:['Import failed. Paste a valid NotMeter V4 stat export. Existing inputs were preserved.','가져오기 실패. 유효한 NotMeter V4 스탯을 붙여넣으세요. 기존 입력은 유지됩니다.'],
-    nothing:['No import yet. Example defaults are shown.','아직 가져온 값이 없습니다. 예시 기본값이 표시됩니다.'],
+    nothing:['Paste your stats or enter them below to begin.','스탯을 붙여넣거나 아래에 직접 입력하세요.'],
+    needStats:['Enter or import your character stats to see results.','캐릭터 스탯을 입력하거나 가져오면 결과가 표시됩니다.'],
+    needSpeed:['Enter your Combat Speed to check thresholds.','전투속도를 입력하면 구간을 확인할 수 있습니다.'],
     storage:['Imported for this visit; browser storage is unavailable.','이번 방문에 적용됨 · 브라우저 저장소를 사용할 수 없습니다.'],
     speedNote:['Bongbong Combat Speed reference · thresholds only; no DPS gain is calculated. Scroll and buff settings are independent of either damage model.','Bongbong 전투속도 참고 · 구간만 표시하며 DPS 증가율은 계산하지 않습니다. 주문서와 버프는 피해 계산과 별개입니다.'],
     baseline:['Current stats','현재 스탯'],scenario:['Combat assumptions','전투 조건'],
@@ -72,16 +74,23 @@
   let divine=store.get('divine',Object.fromEntries(['power','destruction','justice','wisdom'].map(k=>[k,nm[k]])));
   let deltas=store.get('deltas',{}), origins=store.get('origins',{bong:{},notmeter:{}}), imported=store.get('profile',null);
   let report=imported?model.adapt(imported):null, importState=imported?'valid':'nothing';
+  // Older visits may have persisted examples alongside a single edited field.
+  // Preserve imports and actual edits; empty the inherited examples, including crit chance.
+  for(const key of [...model.baseline,'criticalChancePercent']){
+    const origin=origins.notmeter[key];
+    if(origin==='retainedDefault' || origin==='empty' || (!origin && !(report && key in report.notmeter)))nm[key]=null;
+    if(origin==='retainedDefault')origins.notmeter[key]='empty';
+  }
   const nmHost=$('notmeter-mode');
   nmHost.dataset.owned='';
   const deltaKeys=model.baseline.filter(k=>!['power','destruction','justice','wisdom'].includes(k));
   function group(title,keys,prefix,values){
-    return '<section class="panel"><h2>'+esc(c(title))+'</h2><div class="fields">'+keys.map(k=>'<div class="f"><label for="'+prefix+k+'">'+esc(name(k))+'</label><input type="number" step="any" id="'+prefix+k+'" data-field="'+k+'" data-kind="'+prefix+'" value="'+esc(values[k]??0)+'"></div>').join('')+'</div></section>';
+    return '<section class="panel"><h2>'+esc(c(title))+'</h2><div class="fields">'+keys.map(k=>'<div class="f"><label for="'+prefix+k+'">'+esc(name(k))+'</label><input type="number" step="any" id="'+prefix+k+'" data-field="'+k+'" data-kind="'+prefix+'" value="'+esc(Number.isFinite(values[k])?values[k]:'')+'"></div>').join('')+'</div></section>';
   }
   function makeNm(){
     nmHost.innerHTML=group('baseline',model.baseline,'nm-',nm)+group('scenario',model.scenario,'nm-',nm)+
       '<section class="panel"><div class="f"><label for="nm-direction">'+c('direction')+'</label><select id="nm-direction">'+['none','front','back'].map(k=>'<option value="'+k+'"'+(nm.attackType===k?' selected':'')+'>'+c(k)+'</option>').join('')+'</select></div><p class="nm-note">'+c('critHelp')+'</p><p class="nm-note">'+c('method')+' <a href="https://notmeter.com/?view=stat-efficiency" target="_blank" rel="noopener">NotMeter ↗</a></p></section>'+
-      '<section class="panel"><h2>'+c('delta')+'</h2><p class="nm-note">'+c('deltaHelp')+'</p><div class="fields nm-delta">'+deltaKeys.map(k=>'<div class="f"><label for="delta-'+k+'">'+esc(name(k))+'</label><input type="number" step="any" id="delta-'+k+'" data-field="'+k+'" data-kind="delta-" value="'+esc(deltas[k]??0)+'"></div>').join('')+'</div><button id="nm-clear" class="compare-btn">'+c('clear')+'</button></section>'+
+      '<section class="panel"><h2>'+c('delta')+'</h2><p class="nm-note">'+c('deltaHelp')+'</p><div class="fields nm-delta">'+deltaKeys.map(k=>'<div class="f"><label for="delta-'+k+'">'+esc(name(k))+'</label><input type="number" step="any" id="delta-'+k+'" data-field="'+k+'" data-kind="delta-" placeholder="0" value="'+esc(deltas[k]??'')+'"></div>').join('')+'</div><button id="nm-clear" class="compare-btn">'+c('clear')+'</button></section>'+
       '<div id="nm-output" aria-live="polite"></div><section class="panel"><h2>'+c('compare')+'</h2><div class="nm-slots">'+['save1','load1','save2','load2','compare'].map(k=>'<button class="compare-btn" id="nm-'+k+'">'+c(k)+'</button>').join('')+'</div><p id="nm-slot-status" class="nm-status" role="status"></p><div id="nm-comparison"></div></section>';
     renderNm();
   }
@@ -97,7 +106,7 @@
     option.perfectPercent=(option.perfectPercent??0)+(nm.justice-divine.justice)*.2;
     option.hardHitPercent=(option.hardHitPercent??0)+(nm.wisdom-divine.wisdom)*.2;
     const result=model.calculate(nm,option);
-    if(!result){out.innerHTML='<p class="nm-status">'+c('invalidCalc')+'</p>';return;}
+    if(!result){out.innerHTML='<p class="nm-status">'+c(model.baseline.some(k=>nm[k]===null)?'needStats':'invalidCalc')+'</p>';return;}
     const cards=[['expected',fmt(result.base.damage)],['after',fmt(result.after.damage)],['gain',gain(result.gain)]];
     const max=Math.max(...result.effects.map(r=>r.gain),.001);
     out.innerHTML='<div class="nm-cards">'+cards.map(([k,v])=>'<div class="card"><div class="lbl">'+c(k)+'</div><div class="val">'+v+'</div></div>').join('')+'</div><p class="nm-note">'+c('attack')+': '+fmt(result.base.attack)+'</p><section class="panel eff"><h2>'+c('ranking')+'</h2>'+result.effects.map((r,i)=>'<div class="bar-row'+(i===0?' top':'')+'"><span class="name">'+esc(name(r.key))+' +'+r.amount+(!['power','destruction','justice','wisdom',...['attack','additionalAttack','minimumAttack','maximumAttack','pveAttack','bossAttack']].includes(r.key)?'pp':'')+'</span><div class="track"><div class="fill" style="width:'+Math.max(0,r.gain/max*100)+'%;background:var(--'+(i===0?'green':'purple')+')"></div></div><span class="num">'+gain(r.gain)+'</span></div>').join('')+'</section>';
@@ -105,8 +114,8 @@
   function persistNm(){store.set('nm',nm);store.set('divine',divine);store.set('deltas',deltas);}
   nmHost.addEventListener('input',e=>{
     const field=e.target.dataset.field;if(!field)return;
-    const value=e.target.value===''?NaN:Number(e.target.value);
-    if(e.target.dataset.kind==='nm-'){nm[field]=value;origins.notmeter[field]='manual';}else deltas[field]=value;
+    const value=e.target.value===''?null:Number(e.target.value);
+    if(e.target.dataset.kind==='nm-'){nm[field]=value;origins.notmeter[field]='manual';}else if(value===null)delete deltas[field];else deltas[field]=value;
     renderNm();persistNm();store.set('origins',origins);markOrigins();
   });
   nmHost.addEventListener('change',e=>{if(e.target.id==='nm-direction'){nm.attackType=e.target.value;renderNm();persistNm();}});
@@ -145,23 +154,52 @@
     }
     render();renderSpeed();
   }
+  const originalRender=render, originalRenderSpeed=renderSpeed;
+  render=function(){
+    originalRender();
+    const ready=M.every(([id])=>$(id).value!=='' && Number.isFinite(Number($(id).value)));
+    for(const id of ['saveCompare1','saveCompare2'])$(id).disabled=!ready;
+    if(ready)return;
+    for(const id of ['outBase','outDmgNormal','outDmgGuaranteed','outMultNormal','outMultGuaranteed','outCritNormal','outCritGuaranteed'])$(id).textContent='—';
+    for(const id of ['effNormal','effGuaranteed'])$(id).innerHTML='<p class="nm-note" data-owned>'+c('needStats')+'</p>';
+  };
+  renderSpeed=function(){
+    originalRenderSpeed();
+    if($('speedNow').value!=='')return;
+    for(const id of ['speedBaseOut','speedAfterOut','speedNewOut'])$(id).textContent='—';
+    for(const id of ['speedNextOut','speedScrollOut','speedBreakdown'])$(id).textContent='';
+    $('speedCaps').innerHTML='<p class="nm-note" data-owned>'+c('needSpeed')+'</p>';
+  };
   restoreBong(store.get('bong',null));
+  let explicitlySaved=null;
+  try{explicitlySaved=JSON.parse(localStorage.getItem(MY_STATS_STORAGE_KEY));}catch{}
+  for(const key of [...M.map(f=>f[0]),'speedNow']){
+    const origin=origins.bong[key];
+    const explicitlySavedKey=key==='speedNow'?explicitlySaved?.speed?.[key]:explicitlySaved?.mine?.[key];
+    if(origin==='retainedDefault' || origin==='empty' || (!origin && explicitlySavedKey===undefined && !(report && key in report.bong)))$(key).value='';
+    if(origin==='retainedDefault')origins.bong[key]='empty';
+  }
+  render();renderSpeed();
   document.addEventListener('input',e=>{
     if(!bongIds.includes(e.target.id))return;
-    origins.bong[e.target.id]='manual';store.set('origins',origins);store.set('bong',collectBong());markOrigins();
+    origins.bong[e.target.id]='manual';store.set('origins',origins);store.set('bong',collectBong());render();renderSpeed();markOrigins();
   });
   document.addEventListener('change',e=>{if(bongIds.includes(e.target.id))store.set('bong',collectBong());});
   // Upstream buttons mutate inputs without dispatching input events.
   for(const id of ['reset','loadMyStats','loadCompare1','loadCompare2'])$(id).addEventListener('click',()=>{
+    if(id==='reset'){
+      for(const [key] of M)$(key).value='';
+      $('speedNow').value='';
+    }
     for(const k of [...M.map(f=>f[0]),'speedNow'])origins.bong[k]='manual';
-    store.set('origins',origins);store.set('bong',collectBong());markOrigins();
+    store.set('origins',origins);store.set('bong',collectBong());render();renderSpeed();markOrigins();
   });
   function bongName(k){if(k==='speedNow')return locale==='en'?'Combat Speed':'전투속도';const f=M.find(f=>f[0]===k);return f?(locale==='en'?english(f[1]):f[1]):k;}
   function markOrigins(){
     for(const [which,map] of Object.entries(origins))for(const [key,origin] of Object.entries(map)){
       const el=$(which==='bong'?key:'nm-'+key);if(!el)continue;
       const parent=el.closest('.f');if(!parent)continue;
-      parent.classList.toggle('imported-field',['imported','derived'].includes(origin));parent.classList.toggle('retained-field',origin.startsWith('retained'));
+      parent.classList.toggle('imported-field',['imported','derived'].includes(origin));parent.classList.toggle('retained-field',origin.startsWith('retained')||origin==='empty');
       let note=parent.querySelector('.import-origin');if(!note){note=document.createElement('small');note.className='import-origin';note.dataset.owned='';parent.append(note);}note.textContent=c(origin);
     }
   }
@@ -182,10 +220,9 @@
     if(adapted.classKey && $('speedClass').value!==adapted.classKey){$('speedClass').value=adapted.classKey;populateSpeedBuffs();}
     Object.assign(nm,adapted.notmeter);
     for(const key of ['power','destruction','justice','wisdom'])divine[key]=nm[key];
-    origins={bong:{},notmeter:{}};
-    for(const k of [...M.map(f=>f[0]),'speedNow'])origins.bong[k]=k in adapted.bong?(k==='atk'?'derived':'imported'):(Number($(k).value)===(M.find(f=>f[0]===k)?.[2]??80)?'retainedDefault':'retained');
-    const initial=model.defaults();
-    for(const k of model.baseline)origins.notmeter[k]=k in adapted.notmeter?'imported':(nm[k]===initial[k]?'retainedDefault':'retained');
+    origins={bong:{},notmeter:Object.fromEntries(model.scenario.filter(k=>origins.notmeter[k]).map(k=>[k,origins.notmeter[k]]))};
+    for(const k of [...M.map(f=>f[0]),'speedNow'])origins.bong[k]=k in adapted.bong?(k==='atk'?'derived':'imported'):($(k).value===''?'empty':'retained');
+    for(const k of model.baseline)origins.notmeter[k]=k in adapted.notmeter?'imported':(nm[k]===null?'empty':'retained');
     imported=p;report=adapted;importState='valid';
     const saved=store.set('profile',p);store.set('origins',origins);store.set('bong',collectBong());persistNm();
     if(!saved)importState='storage';
@@ -204,7 +241,7 @@
     observer.disconnect();observing=true;locale=value;store.set('language',locale);$('stats-language').value=locale;
     document.querySelectorAll('[data-copy]').forEach(el=>{el.dataset.owned='';el.textContent=c(el.dataset.copy);});
     for(const id of ['stats-import-status','stats-import-details','model-description'])$(id).dataset.owned='';
-    speedNote.textContent=c('speedNote');makeNm();markOrigins();showReport();setMode(mode);translate();observing=false;observe();
+    speedNote.textContent=c('speedNote');makeNm();markOrigins();showReport();setMode(mode);render();renderSpeed();translate();observing=false;observe();
   }
   $('stats-language').addEventListener('change',e=>setLanguage(e.target.value));
   setLanguage(locale);

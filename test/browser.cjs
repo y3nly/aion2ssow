@@ -22,6 +22,15 @@ const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('ba
     const page=await context.newPage(),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base);await page.waitForFunction(()=>globalThis.StatsExtension);
+    assert.equal(await page.locator('#atk').inputValue(),'');
+    assert.equal(await page.locator('#pen').inputValue(),'');
+    assert.equal(await page.locator('#speedNow').inputValue(),'');
+    assert.equal(await page.locator('#outDmgNormal').innerText(),'—');
+    await page.locator('#mode-notmeter').click();
+    assert.equal(await page.locator('#nm-attack').inputValue(),'');
+    assert.equal(await page.locator('#nm-criticalChancePercent').inputValue(),'');
+    assert.equal(await page.locator('#nm-output .nm-cards').count(),0);
+    await page.locator('#mode-bongbong').click();
     const original=await context.newPage();await original.goto(base+'/original');
     const state=await page.evaluate(()=>snap());
     assert.deepEqual(await page.evaluate(s=>calc(s),state),await original.evaluate(s=>calc(s),state));
@@ -35,6 +44,9 @@ const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('ba
     assert.equal(await page.locator('#atk').inputValue(),'11880');assert.equal(await page.locator('#pen').inputValue(),pen);
     assert.equal(await page.locator('#smite').inputValue(),'0');assert.equal(await page.locator('#speedClass').inputValue(),'검성');
     assert.match(await page.locator('#stats-import-details').textContent(),/unknownExample/);
+    // A paste never fills unprovided Bongbong stats with fabricated examples.
+    assert.equal(await page.locator('#outDmgNormal').innerText(),'—');
+    for(const id of ['pen','critStat','multi'])await page.locator('#'+id).fill('0');
     await page.locator('#speedNow').fill('100');await page.locator('#speedClassBuff').selectOption('1');
     assert.equal(await page.locator('#speedAfterOut').innerText(),'140.0%');
     await page.locator('#saveCompare1').click();await page.locator('#amp').fill('70');await page.locator('#saveCompare2').click();await page.locator('#compareSlots').click();
@@ -44,6 +56,7 @@ const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('ba
     assert.equal(await page.locator('#amp').inputValue(),'70');
     await page.locator('#stats-language').selectOption('en');
     await page.locator('#mode-notmeter').click();
+    await page.locator('#nm-criticalChancePercent').fill('80');
     assert.equal(await page.locator('#nm-attack').inputValue(),'8000');assert.equal(await page.locator('#nm-damageAmplificationPercent').inputValue(),'60');
     await page.locator('#nm-attack').fill('9000');
     assert.equal(await page.locator('#atk').inputValue(),'11880');
@@ -62,6 +75,8 @@ const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('ba
     await paste({schema:profile.schema,attack:1000});
     assert.equal(await page.locator('#atk').inputValue(),'11880');assert.equal(await page.locator('#nm-attack').inputValue(),'1000');
     await paste(profile);assert.equal(await page.locator('#nm-attack').inputValue(),'8000');
+    await page.reload();await page.waitForFunction(()=>globalThis.StatsExtension);
+    assert.equal(await page.locator('#nm-criticalChancePercent').inputValue(),'80');
     await page.locator('#mode-bongbong').click();
     for(const cls of Object.keys(models.classes)){
       await page.locator('#speedClass').selectOption(cls);
@@ -80,6 +95,24 @@ const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('ba
       await page.screenshot({path:path.join(root,'dist/review-'+mode+'-mobile.png'),fullPage:true});
     }
     assert.deepEqual(errors,[]);
+    await page.locator('#mode-bongbong').click();await page.locator('#reset').click();
+    assert.equal(await page.locator('#atk').inputValue(),'');
+    assert.equal(await page.locator('#outDmgNormal').innerText(),'—');
+    await page.reload();await page.waitForFunction(()=>globalThis.StatsExtension);
+    assert.equal(await page.locator('#atk').inputValue(),'');
+    const migration=await browser.newContext();
+    await migration.addInitScript(()=>{
+      localStorage.setItem('aion_stats_bong',JSON.stringify({atk:'13538',pen:'2560',amp:'77'}));
+      localStorage.setItem('aion_stats_nm',JSON.stringify({attack:10000,damageAmplificationPercent:77}));
+      localStorage.setItem('aion_stats_origins',JSON.stringify({bong:{amp:'manual'},notmeter:{damageAmplificationPercent:'manual'}}));
+    });
+    const migrated=await migration.newPage();await migrated.goto(base);await migrated.waitForFunction(()=>globalThis.StatsExtension);
+    assert.equal(await migrated.locator('#atk').inputValue(),'');
+    assert.equal(await migrated.locator('#amp').inputValue(),'77');
+    await migrated.locator('#mode-notmeter').click();
+    assert.equal(await migrated.locator('#nm-attack').inputValue(),'');
+    assert.equal(await migrated.locator('#nm-damageAmplificationPercent').inputValue(),'77');
+    await migration.close();
     console.log('Browser checks passed: upstream parity, shared import, language, modes, saves, all classes, mobile.');
   }finally{await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});

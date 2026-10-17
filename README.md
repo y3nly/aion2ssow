@@ -16,9 +16,11 @@ The build checks required integration anchors and reports missing static transla
 
 One paste populates both models from `NOTMETER_STATS_V4:` followed by Base64 UTF-8 JSON with schema `notmeter-stat-efficiency-profile-v4`. Parsing, validation, calculation, and persistence are local to the browser.
 
+Character stats and unbuffed Combat Speed start empty. Imported, manually entered, and explicitly saved values persist; inherited example values from earlier visits are cleared. Reset clears Bongbong character stats. Results wait for character inputs instead of displaying calculations from examples. Target presets and combat scenario settings remain available.
+
 The confirmed consumer contract is NotMeter's public `stat-efficiency.js`. Its documented fields include divine points, attack components, Perfect/Double Chance, and damage boosts. Public repositories and web scripts were inspected; the desktop copy producer's implementation was not publicly available. Therefore no unconfirmed aliases for penetration, critical rating, Multi-hit, or speed are guessed. Unknown producer fields are preserved in the canonical profile and listed in the import report, allowing future mapping after a real sample confirms their meaning.
 
-Bongbong Attack is reconstructed as `(attack + additionalAttack + (minimumAttack + maximumAttack) / 2) * (1 + attackIncreasePercent / 100)`. This excludes Perfect Chance and Weapon Damage Boost. If any component is missing, the existing Attack remains. Matching boosts and Double Chance map directly. Missing fields retain their prior values and are visibly marked. Target presets and buffs remain scenario settings. Subsequent edits in one mode do not modify the other mode.
+Bongbong Attack is reconstructed as `(attack + additionalAttack + (minimumAttack + maximumAttack) / 2) * (1 + attackIncreasePercent / 100)`. This excludes Perfect Chance and Weapon Damage Boost. If any component is missing, the existing Attack remains. Matching boosts and Double Chance map directly. Missing fields retain actual prior values or stay empty and are visibly marked. Target presets and buffs remain scenario settings. Subsequent edits in one mode do not modify the other mode.
 
 ## NotMeter model
 
