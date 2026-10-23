@@ -14,4 +14,5 @@ html[lang=en] .f label,html[lang=en] .m-lbl,html[lang=en] .bar-row .name{white-s
 .nm-slots{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.nm-status{font-size:12px;color:var(--gold)}
 .nm-note,.reference-note{font-size:12px;color:var(--muted);margin:10px 0;line-height:1.7}.nm-note a,.reference-note a{color:var(--gold)}
 .upstream-comments{display:none}.bar-row .name{overflow-wrap:anywhere}button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+#skill-estimate{margin-top:18px}#skill-estimate summary{cursor:pointer;color:var(--gold);font-size:12px}#skill-estimate select{width:100%}.skill-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}.skill-cards .val{font-size:21px}.skill-cards .lbl{white-space:nowrap}
 @media(max-width:600px){.language-control{margin-left:0}.nm-cards{grid-template-columns:1fr}#notmeter-mode .bar-row .name{width:45%;font-size:11px}.bar-row .num{width:64px}.wrap{padding:18px 12px 40px}.compare-change-row{overflow-wrap:anywhere}.fields{grid-template-columns:repeat(2,minmax(0,1fr))}}

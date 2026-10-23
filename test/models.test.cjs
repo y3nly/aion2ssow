@@ -1,10 +1,25 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const m=require('../extension/models.js');
+const skills=require('../extension/skill-model.js');
 const fixtures=require('./notmeter-fixtures.json');
 const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('base64');
 const profile={schema:'notmeter-stat-efficiency-profile-v4',jobName:'검성',...m.defaults()};
 function close(actual,expected){assert.ok(Math.abs(actual-expected)<=Math.max(1,Math.abs(expected))*1e-10,`${actual} ≠ ${expected}`);}
+test('Lv18 Overhead Slam: per-effect values, outcomes and per-cast expectation',()=>{
+  const s={attack:10000,defenseReduction:1000,multiplier:2,criticalFactor:1.5,criticalChance:.5,doubleChance:.2,multiFactor:1.045};
+  const a=skills.estimate(s);
+  close(a.normal,17485*2);close(a.critical,a.normal*1.5);
+  close(a.doubleNormal,a.normal*2);close(a.doubleCritical,a.normal*3);
+  close(a.expectedCast,a.normal*1.25*1.2*1.045*2);
+  close(skills.estimate(s,'before').normal,(2125+1.636*9000)*2);
+  close(skills.estimate({...s,criticalChance:0,doubleChance:0,multiFactor:1}).expectedCast,a.normal*2);
+  close(skills.estimate({...s,criticalChance:1,doubleChance:1,multiFactor:1}).expectedCast,a.doubleCritical*2);
+  close(skills.estimate({...s,defenseReduction:0}).normal,skills.estimate({...s,defenseReduction:0},'before').normal);
+  close(skills.estimate({...s,defenseReduction:1e9}).base,1);
+  for(const bad of [{attack:0},{attack:NaN},{attack:Infinity},{defenseReduction:-1},{criticalChance:1.1},{doubleChance:-1}])assert.equal(skills.estimate({...s,...bad}),null);
+  assert.equal(skills.estimate(s,'unknown'),null);
+});
 for(const fixture of fixtures.fixtures)test('NotMeter reference parity: '+fixture.name,()=>{
   const result=m.calculate(fixture.input);assert.ok(result);
   for(const key of ['attack','effective','damage'])close(result.base[key],fixture.expected[key]);

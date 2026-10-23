@@ -48,6 +48,26 @@ const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('ba
     // A paste never fills unprovided Bongbong stats with fabricated examples.
     assert.equal(await page.locator('#outDmgNormal').innerText(),'—');
     for(const id of ['pen','critStat','multi'])await page.locator('#'+id).fill('0');
+    assert.equal(await page.locator('#skill-output .card').count(),5);
+    const skillValues=await page.evaluate(()=>{
+      const s=snap(),normal=Number(document.getElementById('skill-normal').textContent.replaceAll(',',''));
+      const probe=calc({...s,critAmp:s.eCritRes-50,smite:0,partySmite:0,eSmiteRes:0,multi:0});
+      return {normal,expected:Math.max(2125+1.636*s.atk-Math.max(s.eDef-s.pen,0)/10,1)*probe.mult,before:calc(s)};
+    });
+    assert.ok(Math.abs(skillValues.normal-skillValues.expected)<=.051);
+    await page.locator('#skill-estimate details').evaluate(el=>el.open=true);
+    await page.locator('#skill-observed').fill(String(skillValues.normal));
+    assert.match(await page.locator('#skill-difference').innerText(),/[+-]0.00%/);
+    await page.locator('#skill-order').selectOption('before');
+    assert.notEqual(await page.locator('#skill-normal').innerText(),skillValues.normal.toLocaleString('en-US',{maximumFractionDigits:1}));
+    assert.deepEqual(await page.evaluate(()=>calc(snap())),skillValues.before,'skill controls must not modify upstream results');
+    await page.locator('#skill-order').selectOption('after');
+    await page.locator('#stats-language').selectOption('ko');
+    assert.match(await page.locator('#skill-estimate h2').innerText(),/내려찍기/);
+    await page.locator('#stats-language').selectOption('en');
+    assert.equal(await page.locator('#skill-observed').inputValue(),String(skillValues.normal));
+    await page.locator('#mode-notmeter').click();assert.equal(await page.locator('#skill-estimate').isVisible(),false);
+    await page.locator('#mode-bongbong').click();
     await page.locator('#speedNow').fill('100');await page.locator('#speedClassBuff').selectOption('1');
     assert.equal(await page.locator('#speedAfterOut').innerText(),'140.0%');
     await page.locator('#saveCompare1').click();await page.locator('#amp').fill('70');await page.locator('#saveCompare2').click();await page.locator('#compareSlots').click();
@@ -109,6 +129,7 @@ const encode=p=>'NOTMETER_STATS_V4:'+Buffer.from(JSON.stringify(p)).toString('ba
     assert.equal(await page.locator('#outDmgNormal').innerText(),'—');
     await page.reload();await page.waitForFunction(()=>globalThis.StatsExtension);
     assert.equal(await page.locator('#atk').inputValue(),'');
+    assert.equal(await page.locator('#skill-output .card').count(),0);
     const migration=await browser.newContext();
     await migration.addInitScript(()=>{
       localStorage.setItem('aion_stats_bong',JSON.stringify({atk:'13538',pen:'2560',amp:'77'}));

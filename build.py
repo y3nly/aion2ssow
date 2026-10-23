@@ -95,9 +95,14 @@ def build(root=ROOT):
     (output / 'translations.js').write_text(js, encoding='utf-8')
     for name in ('models.js', 'app.js', 'extension.css'):
         shutil.copyfile(root / 'extension' / name, output / name)
+    # Bundle isolated skill modules into the existing runtime asset contract.
+    for target, extra in (('models.js', 'skill-model.js'), ('app.js', 'skill-ui.js')):
+        with (output / target).open('a', encoding='utf-8') as stream:
+            stream.write('\n' + (root / 'extension' / extra).read_text(encoding='utf-8'))
     (output / 'build-info.json').write_text(json.dumps({
         'upstream_sha256': hashlib.sha256((root / 'index.html').read_bytes()).hexdigest(),
         'notmeter_reference': '20261013-hard-hit',
+        'skill_reference': 'Overhead Slam 11170000 Lv18; global client 2.0.7.0 / 25926599; 2026-10-16',
         'source': 'https://github.com/y3nly/aion2ssow',
     }, indent=2) + '\n', encoding='utf-8')
     print(f'Built {output}; {len(translations)} translation entries')

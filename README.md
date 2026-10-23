@@ -30,6 +30,14 @@ Divine stats are already reflected in imported percentages. Only changes from th
 
 Boss Double Resist defaults to 0% at the site owner's request. Earlier inherited 30% values are migrated to zero; explicitly edited scenario values are retained. This is a configurable assumption, not a measured boss value.
 
+## Experimental skill damage
+
+Bongbong mode includes a separate **Overhead Slam, Lv18, PvE, no specializations** panel. Its source is the [EU/NA client record](https://aion2.gg/database/skills/overhead-slam-11170000), client 2.0.7.0 / Steam 25926599, extracted 2026-10-16: 2,125 + 163.6% Attack per damage effect, two identical effects. `extension/skill-model.js` and `skill-ui.js` are bundled into existing runtime files; neither underlying stat engine nor upstream `index.html` changes.
+
+This is a hypothesis to validate against game measurements, not a verified absolute-damage formula. The default per-effect base is `max(2125 + 1.636 × Attack − max(Defense − Penetration, 0)/10, 1)`. A second selectable hypothesis applies the existing defense subtraction before the skill coefficient. The client tooltip does not establish the server's ordering; both predictions remain visible in the expanded details. Remaining damage/directional/weapon multipliers come from the current Bongbong scenario. Normal, crit, Double, and crit+Double outputs exclude extra Multi-hit procs; mean/cast includes Bongbong's crit estimate, Double rate, Multi-hit multiplier and two damage effects. Perfect Chance, weapon rolls, skill specializations, block, accuracy, and unrepresented buffs/debuffs are not modeled. Target presets retain their existing estimated values. No DPS is calculated and no skill values enter NotMeter mode.
+
+For calibration, record current stats, skill tooltip, target, direction, buffs/debuffs, skill casts, hit count, and per-hit crit/Double flags. Compare matching per-hit outcomes first; then compare total skill damage divided by casts. Enter the observed damage and matching measurement type to see its percentage difference from the prediction. Measurements do not automatically fit or alter the formulas. Check the two-effects-per-cast assumption in the meter before trusting the mean. Observation inputs and defense-order choice persist locally, independently of character stats.
+
 ## Pulling upstream updates
 
 1. `git fetch upstream` then `git merge upstream/main` on a feature branch.
